@@ -4,7 +4,7 @@ from neural import Network
 
 
 def main():
-    data_size = 30000
+    data_size = 60000
 
     (x_train, y_train), (x_test, y_test) = mnist.load_data()
 
@@ -24,7 +24,8 @@ def main():
 
     model = Network()
     model.init_weights()
-    model.fit(x_train=images, y_train=labels, batch_size=16, epochs=300, alpha=0.2)
+    model.fit(x_train=images, y_train=labels, batch_size=32, epochs=50, alpha=0.1)
+    model.evaluate(x_test=test_images, y_test=test_labels)
 
 
 if __name__ == '__main__':
