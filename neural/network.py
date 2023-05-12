@@ -72,7 +72,7 @@ class Network:
 
             # if j % 10 == 0:
             sys.stdout.write(
-                f"I:{e} || Test-Acc:{test_correct_cnt / float(validation_size)} "
+                f"I:{e} || Validation-Acc:{test_correct_cnt / float(validation_size)} "
                 f"|| Train-Acc:{correct_cnt / float(train_size)} "
                 f"|| {end}s\n")
 

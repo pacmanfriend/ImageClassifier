@@ -4,7 +4,7 @@ from neural import Network
 
 
 def main():
-    data_size = 1000
+    data_size = 30000
 
     (x_train, y_train), (x_test, y_test) = mnist.load_data()
 
