@@ -73,19 +73,26 @@ class Network:
             end = time.monotonic() - start
 
             # if j % 10 == 0:
-            sys.stdout.write(
+            print(
                 f"I:{e} || Validation-Acc:{test_correct_cnt / float(validation_size)} "
                 f"|| Train-Acc:{correct_cnt / float(train_size)} "
-                f"|| {end}s\n")
+                f"|| {end}s")
 
         total_end = time.monotonic() - total_start
-        sys.stdout.write(f"Total learning time: {total_end}s")
+        print(f"Total learning time: {total_end}s")
 
-    def predict(self):
-        pass
+    def predict(self, data):
+        layer_0 = data
+        layer_1 = tanh(np.dot(layer_0, self.weights_0_1))
+        layer_2 = tanh(np.dot(layer_1, self.weights_1_2))
+        layer_3 = softmax(np.dot(layer_2, self.weights_2_3))
+
+        return int(np.argmax(layer_3))
 
     def evaluate(self, x_test, y_test):
         error, correct_cnt = (0.0, 0)
+
+        x_test, y_test = shuffle(x_test, y_test)
 
         for i in range(len(x_test)):
             layer_0 = x_test[i:i + 1]
@@ -95,29 +102,27 @@ class Network:
 
             correct_cnt += int(np.argmax(layer_3) == np.argmax(y_test[i:i + 1]))
 
-        sys.stdout.write(
-            f"Test-Acc:{correct_cnt / float(len(x_test))}")
+        print(f"Test-Acc:{correct_cnt / float(len(x_test))}")
 
     def load_model(self, file_path):
+        with h5py.File(file_path, 'r') as f:
+            self.input_size = np.array(f['input_layer_size'])[0]
+            self.hidden_size = np.array(f['hidden_layer_size'])[0]
+            self.output_size = np.array(f['output_layer_size'])[0]
+
+            self.weights_0_1 = np.array(f['weights_0_1'][:])
+            self.weights_1_2 = np.array(f['weights_1_2'][:])
+            self.weights_2_3 = np.array(f['weights_2_3'][:])
+
+    def save_model(self, file_path):
         with h5py.File(file_path, 'w') as f:
-            self.input_size = f['input_layer_size']
-            self.hidden_size = f['hidden_layer_size']
-            self.output_size = f['output_layer_size']
+            f.create_dataset('input_layer_size', data=np.array([self.input_size]))
+            f.create_dataset('hidden_layer_size', data=np.array([self.hidden_size]))
+            f.create_dataset('output_layer_size', data=np.array([self.output_size]))
 
-            self.weights_0_1 = f['weights_0_1']
-            self.weights_1_2 = f['weights_1_2']
-            self.weights_2_3 = f['weights_2_3']
-
-
-def save_model(self, file_path):
-    with h5py.File(file_path, 'w') as f:
-        f.create_dataset('input_layer_size', data=self.input_size)
-        f.create_dataset('hidden_layer_size', data=self.hidden_size)
-        f.create_dataset('output_layer_size', data=self.output_size)
-
-        f.create_dataset('weights_0_1', data=self.weights_0_1)
-        f.create_dataset('weights_1_2', data=self.weights_1_2)
-        f.create_dataset('weights_2_3', data=self.weights_2_3)
+            f.create_dataset('weights_0_1', data=self.weights_0_1)
+            f.create_dataset('weights_1_2', data=self.weights_1_2)
+            f.create_dataset('weights_2_3', data=self.weights_2_3)
 
 
 def shuffle(x, y):
@@ -125,8 +130,12 @@ def shuffle(x, y):
     return x[p], y[p]
 
 
-relu = lambda x: (x >= 0) * x
-relu2deriv = lambda x: x >= 0
+def relu(x):
+    return (x >= 0) * x
+
+
+def relu2deriv(x):
+    return x >= 0
 
 
 def tanh(x):

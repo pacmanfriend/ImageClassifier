@@ -23,9 +23,11 @@ def main():
         test_labels[i][j] = 1
 
     model = Network()
-    model.init_weights()
-    model.fit(x_train=images, y_train=labels, batch_size=32, epochs=50, alpha=0.1)
+    # model.init_weights()
+    # model.fit(x_train=images, y_train=labels, batch_size=32, epochs=50, alpha=0.1)
+    model.load_model('mnist_1_model.hdf5')
     model.evaluate(x_test=test_images, y_test=test_labels)
+    # model.save_model('mnist_1_model.hdf5')
 
 
 if __name__ == '__main__':
