@@ -82,12 +82,16 @@ class Network:
         print(f"Total learning time: {total_end}s")
 
     def predict(self, data):
+        data = data.reshape(1, self.input_size)
+
         layer_0 = data
         layer_1 = tanh(np.dot(layer_0, self.weights_0_1))
         layer_2 = tanh(np.dot(layer_1, self.weights_1_2))
         layer_3 = softmax(np.dot(layer_2, self.weights_2_3))
 
-        return int(np.argmax(layer_3))
+        number = np.argmax(layer_3)
+
+        return number
 
     def evaluate(self, x_test, y_test):
         error, correct_cnt = (0.0, 0)
