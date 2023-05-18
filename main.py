@@ -1,9 +1,8 @@
 from keras.datasets import mnist
 import numpy as np
-from neural import Network, load_image, image_downsample, convert_image_to_grayscale
+from neural import Network, load_image_cv
 from tkinter import *
 from tkinter import filedialog
-from PIL import Image
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg,
                                                NavigationToolbar2Tk)
@@ -46,8 +45,6 @@ class GUI:
     def __init__(self):
         self.__root = Tk()
 
-        self.loaded_image: Image = None
-        self.downsampled_image: np.ndarray = None
         self.grayscale_image: np.ndarray = None
         self.model: Network = None
         self.x_train = None
@@ -55,11 +52,12 @@ class GUI:
         self.y_train = None
         self.y_test = None
 
+        self.result = StringVar()
+        self.threads_count = IntVar()
+
         self.buttons_frame = Frame(self.__root, width=50, pady=10, padx=10)
         self.load_img_btn = Button(self.buttons_frame, text="Загрузить изображение", padx=2, pady=2, width=30, height=1,
                                    bg='white', fg='black')
-        self.convert_to_grey_btn = Button(self.buttons_frame, text="Преобразовать в градации серого", padx=2, pady=2,
-                                          width=30, height=1, bg='white', fg='black')
 
         self.create_model_btn = Button(self.buttons_frame, text="Создать модель", padx=2, pady=2,
                                        width=30, height=1, bg='white', fg='black')
@@ -84,14 +82,12 @@ class GUI:
         self.__root.geometry("1280x720+50+50")
 
         self.load_img_btn.bind("<Button-1>", self.load_image_from_filesystem)
-        self.convert_to_grey_btn.bind('<Button-1>', self.convert_to_grayscale)
         self.load_model_btn.bind('<Button-1>', self.load_model)
         self.predict_btn.bind('<Button-1>', self.get_result)
         self.show_train_btn.bind('<Button-1>', self.show_mnist)
 
         self.buttons_frame.pack(anchor=NW)
         self.load_img_btn.pack(anchor=NW)
-        self.convert_to_grey_btn.pack(anchor=NW)
         self.load_model_btn.pack(anchor=NW)
         self.predict_btn.pack(anchor=NW)
         self.show_train_btn.pack(anchor=NW)
@@ -120,10 +116,9 @@ class GUI:
         filepath = filedialog.askopenfilename()
 
         if filepath != "":
-            self.loaded_image = load_image(filepath)
-            self.downsampled_image = image_downsample(self.loaded_image)
+            self.grayscale_image = load_image_cv(filepath)
 
-            self.image_plot.imshow(self.downsampled_image)
+            self.image_plot.imshow(self.grayscale_image)
 
             self.canvas.draw()
             self.canvas.get_tk_widget().pack(anchor=NE)
@@ -131,20 +126,6 @@ class GUI:
             # toolbar = NavigationToolbar2Tk(canvas, root)
             # toolbar.update()
             # canvas.get_tk_widget().pack(anchor=NE)
-
-    def convert_to_grayscale(self, event):
-        self.grayscale_image = convert_image_to_grayscale(self.downsampled_image)
-
-        min = self.grayscale_image.min()
-        max = self.grayscale_image.max()
-
-        for i in range(28):
-            for j in range(28):
-                self.grayscale_image[i][j] = (min + self.grayscale_image[i][j]) / (max - min)
-
-        self.image_plot.imshow(self.grayscale_image)
-        self.canvas.draw()
-        self.canvas.get_tk_widget().pack(anchor=NE)
 
     def load_mnist_data(self):
         (x_train, y_train), (x_test, y_test) = mnist.load_data()

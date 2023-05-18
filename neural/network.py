@@ -1,7 +1,7 @@
 import numpy as np
-import sys
 import time
 import h5py
+from copy import deepcopy
 
 
 class Network:
@@ -72,7 +72,6 @@ class Network:
 
             end = time.monotonic() - start
 
-            # if j % 10 == 0:
             print(
                 f"I:{e} || Validation-Acc:{test_correct_cnt / float(validation_size)} "
                 f"|| Train-Acc:{correct_cnt / float(train_size)} "
@@ -127,6 +126,9 @@ class Network:
             f.create_dataset('weights_0_1', data=self.weights_0_1)
             f.create_dataset('weights_1_2', data=self.weights_1_2)
             f.create_dataset('weights_2_3', data=self.weights_2_3)
+
+    def copy_model(self):
+        return deepcopy(self)
 
 
 def shuffle(x, y):
