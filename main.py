@@ -57,22 +57,24 @@ class GUI:
 
         self.buttons_frame = Frame(self.__root, width=50, pady=10, padx=10)
         self.load_img_btn = Button(self.buttons_frame, text="Загрузить изображение", padx=2, pady=2, width=30, height=1,
-                                   bg='white', fg='black')
+                                   bg='white', fg='black', command=self.load_image_from_filesystem)
 
         self.create_model_btn = Button(self.buttons_frame, text="Создать модель", padx=2, pady=2,
-                                       width=30, height=1, bg='white', fg='black')
+                                       width=30, height=1, bg='white', fg='black', command=self.create_model)
         self.train_model_btn = Button(self.buttons_frame, text="Обучить модель", padx=2, pady=2,
                                       width=30, height=1, bg='white', fg='black')
         self.save_model_btn = Button(self.buttons_frame, text="Сохранить модель", padx=2, pady=2,
-                                     width=30, height=1, bg='white', fg='black')
+                                     width=30, height=1, bg='white', fg='black', command=self.save_model)
+        self.show_model_info_btn = Button(self.buttons_frame, text='Показать информацию о модели', padx=2, pady=2,
+                                          width=30, height=1, bg='white', fg='black')
 
         self.load_model_btn = Button(self.buttons_frame, text='Загрузить модель', padx=2, pady=2,
-                                     width=30, height=1, bg='white', fg='black')
+                                     width=30, height=1, bg='white', fg='black', command=self.load_model)
         self.predict_btn = Button(self.buttons_frame, text='Определить цифру', padx=2, pady=2,
-                                  width=30, height=1, bg='white', fg='black')
+                                  width=30, height=1, bg='white', fg='black', command=self.predict)
 
         self.show_train_btn = Button(self.buttons_frame, text="Тренировочные данные", padx=2, pady=2,
-                                     width=30, height=1, bg='white', fg='black')
+                                     width=30, height=1, bg='white', fg='black', command=self.show_mnist)
 
         self.image_plot = None
         self.canvas = None
@@ -81,14 +83,11 @@ class GUI:
         self.__root.title("Image Classifier")
         self.__root.geometry("1280x720+50+50")
 
-        self.load_img_btn.bind("<Button-1>", self.load_image_from_filesystem)
-        self.load_model_btn.bind('<Button-1>', self.load_model)
-        self.predict_btn.bind('<Button-1>', self.get_result)
-        self.show_train_btn.bind('<Button-1>', self.show_mnist)
-
-        self.buttons_frame.pack(anchor=NW)
+        self.buttons_frame.pack(anchor=NW, side=LEFT)
         self.load_img_btn.pack(anchor=NW)
         self.load_model_btn.pack(anchor=NW)
+        self.create_model_btn.pack(anchor=NW)
+        self.save_model_btn.pack(anchor=NW)
         self.predict_btn.pack(anchor=NW)
         self.show_train_btn.pack(anchor=NW)
 
@@ -96,23 +95,23 @@ class GUI:
         self.image_plot = fig.add_subplot()
         self.canvas = FigureCanvasTkAgg(fig, master=self.__root)
         self.canvas.draw()
-        self.canvas.get_tk_widget().pack(anchor=NE)
+        self.canvas.get_tk_widget().pack(anchor=NE, side=TOP)
 
         self.__root.mainloop()
 
-    def load_model(self, event):
+    def load_model(self):
         model_path = filedialog.askopenfilename()
 
         if model_path != "":
             self.model = Network()
             self.model.load_model(model_path)
 
-    def get_result(self, event):
+    def predict(self):
         res = self.model.predict(self.grayscale_image)
 
         a = 0
 
-    def load_image_from_filesystem(self, event):
+    def load_image_from_filesystem(self):
         filepath = filedialog.askopenfilename()
 
         if filepath != "":
@@ -135,7 +134,7 @@ class GUI:
         self.y_train = y_train
         self.y_test = y_test
 
-    def show_mnist(self, event):
+    def show_mnist(self):
         mnist_win = Tk()
         mnist_win.geometry('1280x720+50+50')
 
@@ -150,6 +149,19 @@ class GUI:
         canvas = FigureCanvasTkAgg(fig, master=mnist_win)
         canvas.draw()
         canvas.get_tk_widget().pack(anchor=CENTER)
+
+    def create_model(self, event):
+        self.model = Network()
+        self.model.init_weights()
+
+    def save_model(self):
+        filepath = filedialog.asksaveasfilename()
+
+        if filepath != "":
+            self.model.save_model(filepath)
+
+    def show_model_info(self):
+        pass
 
 
 if __name__ == '__main__':
