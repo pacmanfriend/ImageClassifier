@@ -17,33 +17,6 @@ def main():
     gui.start()
 
 
-def train():
-    data_size = 60000
-
-    (x_train, y_train), (x_test, y_test) = mnist.load_data()
-
-    images, labels = (x_train[:data_size].reshape(data_size, 28 * 28) / 255, y_train[:data_size])
-    one_hot_labels = np.zeros((len(labels), 10))
-
-    for i, j in enumerate(labels):
-        one_hot_labels[i][j] = 1
-
-    labels = one_hot_labels
-
-    test_images = x_test.reshape(len(x_test), 28 * 28) / 255
-    test_labels = np.zeros((len(y_test), 10))
-
-    for i, j in enumerate(y_test):
-        test_labels[i][j] = 1
-
-    model = Network()
-    # model.init_weights()
-    # model.fit(x_train=images, y_train=labels, batch_size=32, epochs=50, alpha=0.1)
-    model.load_model('models/mnist_1_model.hdf5')
-    model.evaluate(x_test=test_images, y_test=test_labels)
-    # model.save_model('models/mnist_1_model.hdf5')
-
-
 class GUI:
     def __init__(self):
         self.__root = Tk()
@@ -60,6 +33,7 @@ class GUI:
 
         self.result = StringVar()
         self.threads_count = IntVar()
+        self.train_time = 0.0
 
         self.load_mnist_data()
 
@@ -68,19 +42,20 @@ class GUI:
         self.max_params_frame = Frame(self.__root, padx=5, pady=5)
         self.train_frame = Frame(self.__root, padx=5, pady=5)
         self.threads_counter_frame = Frame(self.__root, padx=5, pady=5)
+        self.opt_params_frame = Frame(self.__root, padx=5, pady=5)
 
         self.load_img_btn = Button(self.buttons_frame, text="Загрузить изображение", padx=2, pady=2, width=30, height=1,
                                    bg='white', fg='black', command=self.load_image_from_filesystem)
-        self.create_model_btn = Button(self.buttons_frame, text="Создать модель", padx=2, pady=2,
+        self.create_model_btn = Button(self.buttons_frame, text="Создать нейросеть", padx=2, pady=2,
                                        width=30, height=1, bg='white', fg='black', command=self.create_model)
-        self.train_model_btn = Button(self.threads_counter_frame, text="Начать обучение модель", padx=2, pady=2,
+        self.train_model_btn = Button(self.threads_counter_frame, text="Начать обучение нейросети", padx=2, pady=2,
                                       width=30, height=1, bg='white', fg='black', command=self.train_model)
-        self.save_model_btn = Button(self.buttons_frame, text="Сохранить модель", padx=2, pady=2,
+        self.save_model_btn = Button(self.buttons_frame, text="Сохранить нейросеть", padx=2, pady=2,
                                      width=30, height=1, bg='white', fg='black', command=self.save_model)
         self.show_model_info_btn = Button(self.buttons_frame, text='Показать информацию о модели', padx=2, pady=2,
                                           width=30, height=1, bg='white', fg='black')
 
-        self.load_model_btn = Button(self.buttons_frame, text='Загрузить модель', padx=2, pady=2,
+        self.load_model_btn = Button(self.buttons_frame, text='Загрузить нейросеть', padx=2, pady=2,
                                      width=30, height=1, bg='white', fg='black', command=self.load_model)
         self.predict_btn = Button(self.buttons_frame, text='Определить цифру', padx=2, pady=2,
                                   width=30, height=1, bg='white', fg='black', command=self.predict)
@@ -91,7 +66,7 @@ class GUI:
         self.result_label = Label(self.result_frame, text="", font=("Arial", 16))
 
         self.max_threads_count_label = Label(self.max_params_frame,
-                                             text=f"Доступное количество потоков: {cpu_count()}",
+                                             text=f"Доступное количество потоков: 8",
                                              font=("Arial", 10))
 
         self.max_train_size_label = Label(self.max_params_frame,
@@ -103,6 +78,17 @@ class GUI:
 
         self.threads_count_label = Label(self.threads_counter_frame, text="Количество потоков", font=("Arial", 10))
         self.threads_count_entry = Entry(self.threads_counter_frame)
+
+        self.opt_threads_count_label = Label(self.opt_params_frame, text="Оптимальное число потоков: ",
+                                             font=("Arial", 10))
+        self.opt_train_time_label = Label(self.opt_params_frame, text="Предположительное время обучения: ",
+                                          font=("Arial", 10))
+        self.calculate_threads_btn = Button(self.opt_params_frame, text="Рассчитать оптимальное количество потоков",
+                                            padx=2, pady=2,
+                                            width=50, height=1, bg='white', fg='black',
+                                            command=self.get_optimum_proc_count)
+
+        self.edu_time_label = Label(self.threads_counter_frame, text="Фактическое время обучения: ", font=("Arial", 10))
 
         self.image_plot = None
         self.canvas = None
@@ -122,6 +108,12 @@ class GUI:
         self.train_size_label.pack(anchor=NW, side=LEFT)
         self.train_size_entry.pack(anchor=NE, side=RIGHT)
 
+        self.opt_params_frame.pack(anchor=NW, side=TOP, expand=FALSE)
+        self.opt_threads_count_label.pack(anchor=NW, side=TOP)
+        self.opt_train_time_label.pack(anchor=NW, side=TOP)
+        self.calculate_threads_btn.pack(anchor=NW, side=TOP)
+
+        self.edu_time_label.pack(anchor=NW, side=BOTTOM)
         self.threads_counter_frame.pack(anchor=NW, side=TOP, expand=FALSE)
         self.threads_count_label.pack(anchor=NW, side=LEFT)
         self.threads_count_entry.pack(anchor=NE, side=RIGHT)
@@ -167,10 +159,6 @@ class GUI:
             self.canvas.draw()
             self.canvas.get_tk_widget().pack(anchor=NE)
 
-            # toolbar = NavigationToolbar2Tk(canvas, root)
-            # toolbar.update()
-            # canvas.get_tk_widget().pack(anchor=NE)
-
     def load_mnist_data(self):
         (x_train, y_train), (x_test, y_test) = mnist.load_data()
 
@@ -189,8 +177,6 @@ class GUI:
         fig = plt.figure(figsize=(10, 10))
         for i in range(36):
             image_plot = fig.add_subplot(6, 6, i + 1)
-            # image_plot.xticks([])
-            # image_plot.yticks([])
             image_plot.grid(False)
             image_plot.imshow(self.x_train[i].reshape((28, 28)))
 
@@ -216,8 +202,6 @@ class GUI:
         threads = int(self.threads_count_entry.get())
         train_size = int(self.train_size_entry.get())
         pack_size = train_size // threads
-
-        print(f"Data size: {train_size}, Threads: {threads}")
 
         start_time = time.monotonic()
 
@@ -247,8 +231,6 @@ class GUI:
         bar = Barrier(threads)
         processes = []
 
-        start_pr = time.monotonic()
-
         with Manager() as m:
             grads_dict = m.dict()
             weights_dict = m.dict()
@@ -261,9 +243,6 @@ class GUI:
                 processes.append(pr)
 
                 pr.start()
-
-            end_pr = time.monotonic() - start_pr
-            print(end_pr)
 
             for p in processes:
                 p.join()
@@ -278,7 +257,9 @@ class GUI:
                 models[i].weights_2_3 = weights[2]
 
         end_time = time.monotonic() - start_time
-        print(end_time)
+        self.train_time = end_time
+
+        self.edu_time_label["text"] = "Фактическое время обучения: " + str(self.train_time) + "c"
 
         test_images = self.x_test.reshape(len(self.x_test), 28 * 28) / 255
         test_labels = np.zeros((len(self.y_test), 10))
@@ -297,15 +278,34 @@ class GUI:
                 ind = i
 
         self.model = models[ind].copy_model()
+        messagebox.showinfo("Обучение", "Нейронная сеть обучена!")
 
     def show_model_info(self):
         pass
+
+    def get_optimum_proc_count(self):
+        train_size = int(self.train_size_entry.get())
+
+        min_time = 2000000000000000000000
+        index = 0
+
+        for i in range(1, 9):
+            res = -134.975 + 1.814 * 10 ** (-3) * train_size + 22.599 * i - 0.853 * i ** 2 + (
+                    313.612 - 2.431 * 10 ** (-4) * train_size) / i + (
+                          -195.724 + 1.982 * 10 ** (-3) * train_size) / i ** 2
+
+            if res < min_time:
+                min_time = res
+                index = i
+
+        self.opt_threads_count_label["text"] = "Оптимальное количество потоков: " + str(index)
+        self.opt_train_time_label["text"] = "Предположительное время обучения: " + str(min_time) + "c"
 
 
 def print_proc(a, b, c, d, i):
     g = current_process().name
 
-    # print(f"{g} Epoch: {i} Train-Err: {a} Train-Acc: {b} Validation-Err: {c} Validation-Acc: {d}")
+    print(f"{g} Epoch: {i} Train-Err: {a} Train-Acc: {b} Validation-Err: {c} Validation-Acc: {d}")
 
 
 if __name__ == '__main__':

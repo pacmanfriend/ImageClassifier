@@ -1,5 +1,4 @@
 import numpy as np
-import time
 import h5py
 from copy import deepcopy
 from multiprocessing import current_process
