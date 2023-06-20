@@ -95,7 +95,7 @@ class GUI:
 
     def start(self):
         self.__root.title("Image Classifier")
-        self.__root.geometry("1280x720+50+50")
+        self.__root.geometry("840x650+50+50")
 
         self.buttons_frame.pack(anchor=NW, side=LEFT)
 
